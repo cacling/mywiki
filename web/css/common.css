@@ -1,0 +1,51 @@
+body {
+	background: none repeat scroll 0 0 #FFFFFF;
+	color: #333333;
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 18px;
+}
+
+img {
+	margin: 10px 5px 30px 5px;
+}
+
+h2 {
+	font-size: 36px;
+	font-weight: bold;
+	text-align: center;
+}
+
+#container {
+	margin: auto;
+	width: 1050px;
+	margin-top: 50px;
+}
+
+
+.fr {
+	float: right;
+}
+
+.fl {
+	float: left;
+}
+
+.ffr {
+	float: right;
+	width: 100%;
+}
+
+.ffl {
+	float: left;
+	width: 100%;
+}
+
+.seg {
+	float: left;
+	margin-bottom: 100px;
+	width: 100%;
+}
+
+.cr {
+	color: red;
+}

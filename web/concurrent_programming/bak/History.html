@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<title>并行计算的发展历史与现状</title>
+</head>
+<body>
+<div id="container">
+
+<h2>发展历史</h2>
+<div class="seg">
+<h3>冯.诺依曼体系</h3>
+1945年，数学家约翰.冯.诺依曼
+计算模型：“存储程序”（冯.诺依曼体系结构）
+程序中的指令以线性和单线程的模式串行执行。
+<h3>并发执行</h3>
+20世纪60年代，分时共享操作系统，首次引入了程序并发执行的概念
+<h3>高性能计算机</h3>
+1976年至今（高性能计算机）
+科学研究手段：理论+物理实验+计算
+http://www.top500.org/ （世界上最快的计算机，每年发布两次）---“天河一号”，2009年，第五位！
+我国是继美国、日本之后第三个具有研制高性能计算机能力的国家。
+向量并行→多处理机并行→大规模并行→集群技术→定制技术
+</div>
+
+<h2>三个里程碑</h2>
+<div class="seg">
+<h3>SuperScalar</h3>
+1993年Intel Pentium超标量处理器
+能够在单个时钟周期内执行多条指令的处理器。
+采用指令级并行技术（Instruction-Level Parallelism）
+指令级并行技术:即动态执行或乱序（out of order）执行技术，使得CPU能够以更加优化的方式对指令进行重新定序），从而达到消除流水线停顿，进而保持处理器的执行单元尽量处于工作状态。
+<img alt="" src="superscalarDemo.jpeg">
+
+<h3>HT</h3>
+2000年 超线程技术(Hyper-Threading Technology)
+支持超线程技术的处理器首次采用同时多线程技术
+即：SMT技术（Simultaneous Multi-Threading）
+Intel实现的SMT技术就是超线程技术。
+<img alt="" src="i/Hyper-ThreadingTechnology.jpeg">
+
+<h3>MultiCore</h3>
+2005年 多核处理器（双核处理器）
+采用单芯片多处理器（CMP，Chip Multiprocessor）设计
+在单个处理器芯片内实现两个或更多的“逻辑核”。这些核都是相互独立的处理器，只是位于同一块芯片上而已。
+执行核有自己的体系结构资源，并且可以与SMT技术结合
+双核的CPU,在物理上(也就是实体物质上),有两个核心,就叫做物理双核。逻辑双核，就是在物理上只有一个核心，采用技术手段，使它模拟双核工作，就像一个人，完成两个人的工作任务。一个人一只手在炒菜，另一只手在洗碗.这就是两条工作线同时都在前进。用在CPU上，就是“双线程”了，也就是逻辑双核。如果炒菜和洗碗，由两个人来干，就是“物理双核”了。 逻辑双核技术,就是HT技术(超线程技术)，很显然物理双核心处理器性能要更优越。
+             Intel公司的超线程技术将一个物理处理器核模拟成两个逻辑核，可并行执行两个线程从而能有效提高处理器的运行效率。
+例如：
+Sun的Niagara系列
+IBM的Power系列
+AMD的Opteron（皓龙系列 ）
+Intel的Xeon（至强系列）
+Tilera的TILE-Gx100
+GPU
+GPGPU
+	Nvidia的Tesla
+	AMD的Firestream
+	Intel的Larabee
+Cell处理器
+FPGA
+<img alt="" src="i/MultiCore.jpeg">
+
+多核处理器出现的原因 ——》。。。
+
+
+
+
+
+</div>
+
+</div>
+</body>
+</html>

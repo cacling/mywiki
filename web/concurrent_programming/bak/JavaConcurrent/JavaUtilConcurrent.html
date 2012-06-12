@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../css/common.css" type="text/css" charset="utf-8" />
+<script src="../js/jquery-1.7.2.min.js"></script>
+<script src="../js/common.js"></script>
+<script>
+	$(function() {
+		$( "#button" ).click(function() {
+			if ($("#effect").is(':visible')) {
+				$( "#effect" ).hide();
+			}else{
+				$( "#effect" ).show("Explode");
+			}
+			return false;
+		});
+
+		$( "#effect" ).hide();
+	});
+	</script>
+
+
+<title>Moore's Law</title>
+</head>
+<body>
+<div id="container">
+
+<h2>Java Util Concurrent</h2>
+
+<div class="seg">
+
+Executor
+
+
+Thread Pool
+
+Callables and Features
+
+ExecutorService
+ScheduledExecutorService
+
+Lock
+RetrantLock
+ReadWriteLock
+
+Synchronizers
+Semophore
+CountDownLatch
+CyclicBarrier
+Exchanger
+
+Concurrent Collections`
+
+Hints:
+不要在synchronized方法，或者在lock里有大量的计算和IO操作，拥有lock的时间越短越好
+
+Dump, analysis
+
+
+ Java thread synchronization
+– synchronized methods and blocks
+– Shared objects as monitors; Bounded buffer (consumer-producer) example
+ Concurrent utilities
+– Locks and Conditions;
+– The Executor framework; Example of using a thread pool
+– Synchronizers; Atomic variables; Concurrent collections
+
+<a href="#" id="button" class="ui-state-default ui-corner-all">Run Effect</a>
+
+	<div id="effect" class="ui-widget-content ui-corner-all">
+	Further reading:
+	http://java.sun.com/docs/books/tutorial/essential/concurrency/index.html
+	</div>
+</div>
+
+
+http://blog.csdn.net/yangzl2008/article/details/7022577
+http://www.cnblogs.com/likehua/archive/2012/02/16/2353978.html
+http://www.blogjava.net/BucketLi/archive/2010/12/16/340295.html
+
+http://www.slideshare.net/caroljmcdonald/java-concurrency-memory-model-and-trends-4961797
+
+<div class="seg">
+
+</div>
+
+</div>
+</body>
+</html>

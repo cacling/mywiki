@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<title>Multicore</title>
+</head>
+<body>
+<div id="container">
+
+<h2>Muliticore</h2>
+
+
+http://www.inpai.com.cn/doc/hard/60027_2.htm
+http://tech.sina.com.cn/c/2003-01-27/17571.html
+http://wiki.answers.com/Q/Which_Intel_and_AMD_processors_support_SMP
+http://zhidao.baidu.com/question/10614391.html
+http://we.pcinlife.com/thread-755801-1-1.html
+http://blog.sina.com.cn/s/blog_45ee63cc01013ecl.html
+http://wenwen.soso.com/z/q105563648.htm
+http://wenwen.soso.com/z/q175545753.htm?w=SMT+HT&spi=1&sr=3&w8=SMT+HT&qf=20&rn=46&qs=4&ch=w.search.3&pid=search_zdwd_jq
+http://wenwen.soso.com/z/q149000679.htm?w=%B1%BC%CC%DA4+HT&spi=1&sr=3&w8=%E5%A5%94%E8%85%BE4+HT&qf=20&rn=41453&qs=4&ch=w.search.3
+
+ 构建一套SMP系统的必要条件是：支持SMP的硬件包括主板和CPU；支持SMP的系统平台，再就是支持SMP的应用软件。
+
+http://hi.baidu.com/imheaventian/item/dbea8e357c961c4b3175a112
+
+instruction-level parallelism
+http://data.book.163.com/book/section/000BNZCM/000BNZCM28.html
+http://en.wikipedia.org/wiki/Instruction_level_parallelism
+
+Simultaneous multithreading
+http://en.wikipedia.org/wiki/Instruction_level_parallelism
+http://blog.sina.com.cn/s/blog_4ec38d4f0100bzg4.html
+
+chip multiprocessor
+http://en.wikipedia.org/wiki/Multi-core_processor
+
+多核的困难，天下没有免费的午餐
+http://wenku.baidu.com/view/4fda62d73186bceb19e8bb24.html
+
+Homogeneous vs heterogeneous(统一与多样性)
+http://www.csa.com/discoveryguides/multicore/review6.php
+low count, fat cores vs high count, thin cores
+Bus-based interconnect vs Network on trip
+Shared memory vs Message passing
+http://wenku.baidu.com/view/4a54aad5c1c708a1284a4430.html
+http://www.cs.nccu.edu.tw/~lien/Class/Seminar/2000pre/DSM/index.html
+
+
+magny-cours(AMD)
+http://server.it168.com/a2010/0329/866/000000866577_all.shtml
+gulftown(Intel)
+http://itbbs.pconline.com.cn/diy/10462032.html
+niagara 2(Oracle Sun)
+http://article.pchome.net/content-165418.html
+Tile64
+http://blog.ixpub.net/html/35/10825935-2434.html
+Intel Larrabee GPU
+http://www.hpctech.com/2009/0718/9.html
+IBM powerxcell 8i
+http://tech.chinabyte.com/thread-372737-1-1.html
+
+international technology roadmap for semiconductors
+http://www.sematech.org/meetings/archives/ges/7727/02%20-%20Allan.pdf
+
+SIMD vs MIMD
+http://baike.baidu.com/view/971687.htm
+MIMD-> message passing arch
+    \ shared memory
+http://siber.cankaya.edu.tr/ozdogan/GraduateParallelComputing.old/ceng505/node8.html    
+
+
+http://book.51cto.com/art/201003/185806.htm
+Coarse Gain Threading（粗并行线程方式）是最基本的多线程技术，几乎每种操作系统、硬件都提供对这种功能的支持。在这种方式下，当一个指令流暂时中断（例如等待IO），系统/CPU就可以切换到下一个指令流执行；Fine Gain Threading（精细并行线程方式）是HMT的实现方式，Simultaneous Multi-Threading是SMT或者HT（Hyper Thread，Intel对并发多线程的一种称呼）的实现方式。
+
+OpenMP:multithread
+http://bisqwit.iki.fi/story/howto/openmp/
+http://baike.baidu.com/view/1687659.htm
+http://blog.csdn.net/drzhouweiming/article/details/1689853
+http://blog.csdn.net/drzhouweiming/article/details/1175848
+
+
+Java Fork-join
+http://www.ibm.com/developerworks/cn/java/j-jtp03048.html
+http://www.ibm.com/developerworks/java/library/j-jtp11137/index.html
+http://www.ibm.com/developerworks/java/library/j-jtp03048/index.html
+http://www.blogjava.net/yongboy/archive/2012/02/03/369576.html
+http://hi.baidu.com/yhtf9r9d/blog/item/d039a36b465bdbcd2f73b327.html
+http://developer.51cto.com/art/201105/263236.htm
+http://www.drdobbs.com/blogs/jvm/231000556
+http://coopsoft.com/ar/CalamityArticle.html
+
+Result doWork(Work work) {
+    if (work is small) {
+        process the work
+    }
+    else {
+        split up work
+        invoke framework to solve both parts
+    }
+}
+
+
+
+One key difference is that F-J seems to be designed to work on a single Java VM, while M-R is explicitly designed to work on a large cluster of machines. These are very different scenarios.
+F-J offers facilities to partition a task into several subtasks, in a recursive-looking fashion; more tiers, possibility of 'inter-fork' communication at this stage, much more traditional programming. Does not extend (at least in the paper) beyond a single machine. Great for taking advantage of your eight-core.
+M-R only does one big split, with the mapped splits not talking between each other at all, and then reduces everything together. A single tier, no inter-split communication until reduce, and massively scalable. Great for taking advantage of your share of the cloud.
+http://www.cs.washington.edu/homes/djg/teachingMaterials/grossmanSPAC_forkJoinFramework.html
+
+如何看每个CPU的使用率  
+http://hwood.blog.163.com/blog/static/8758117520117225314788/
+
+
+
+并行	
+指令管线: 指令管线化 · 按序/乱序执行 · 寄存器重命名 · 预测执行
+并行层次: 位级并行 · 指令级并行 · 超标量 · 数据并行 · 任务并行
+线程: 多线程 · 同步多线程 · 超线程 · 超级线程
+费林分类法: SISD · SIMD · MISD · MIMD
+
+http://zh.wikipedia.org/wiki/%E5%A4%9A%E7%BA%BF%E7%A8%8B
+
+</div>
+</body>
+</html>

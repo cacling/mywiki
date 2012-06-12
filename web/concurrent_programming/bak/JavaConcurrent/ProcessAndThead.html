@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+
+
+
+
+
+
+多核和多线程关系
+http://wenku.baidu.com/view/e992513610661ed9ad51f3b8.html
+http://www.enet.com.cn/article/2007/0423/A20070423554881.shtml
+http://www.iteye.com/topic/375376
+http://adderllyer.iteye.com/blog/214059
+1. Java不存在所谓的多核上的多线程。你能做的只有写出多线程的程序，至于是在单核上运行还是在多核上运行，程序上看不出来，那个是由JRE决定的。
+2. 没法判断哪个线程正在哪一个CPU上运行，任何程序都做不到。一个线程一次也只能运行千分之一秒，不可能一直占用CPU，下一次运行也许就不是上一次的核，所以没法判断。
+
+关键问题在于，你无法预测每个cpu的时间片分配。所以，要得到你想要的输出结果就属于随机事件了。  对与多核cpu 上的程序同步问题，最好不要用信号量，互斥量，事件对象，因为它们都属于内核对象，都是对一个cpu而言的。其他的cpu根本不会理睬你设置的这些东西。
+
+http://www.cnblogs.com/viviancc/archive/2012/03/09/2388197.html
+http://blog.csdn.net/j2eeweiwei/article/details/2300194
+http://rdc.hundsun.com/forum.php?mod=viewthread&tid=129&page=1
+http://www.chineselinuxuniversity.net/articles/35341.shtml
+http://hzbook.group.iteye.com/group/wiki/3122-Java
+http://www.chineselinuxuniversity.net/articles/47994.shtml
+
+http://topic.csdn.net/u/20091011/19/058bca1c-9878-4992-8117-559eeaf2b45f.html
+http://www.iamcoding.com/?p=291
+http://daigong.sinaapp.com/?p=90
+http://bbs.itheima.com/blog-2258-14.html
+
+http://blog.csdn.net/lj70024/article/details/5455790
+http://java-mzd.iteye.com/blog/734130
+http://www.cnblogs.com/toven/archive/2011/12/6.html
+
+http://hwangchong.iteye.com/blog/1124875
+http://www.doc88.com/p-60481221808.html
+http://baike.baidu.com/view/1053.htm
+http://oolongice.com/?p=168
+http://www.360doc.com/content/09/1024/08/397210_7755943.shtml
+
+线程是进程中的实体，一个进程可以拥有多个线程，一个线程必须有一个父进程。线程不拥有系统资源，只有运行必须的一些数据结构；它与父进程的其它线程共享该进程所拥有的全部资源。线程可以创建和撤消线程，从而实现程序的并发执行。一般，线程具有就绪、阻塞和运行三种基本状态。
+在多中央处理器的系统里，不同线程可以同时在不同的中央处理器上运行，甚至当它们属于同一个进程时也是如此。
+
+　进程是资源分配的基本单位。所有与该进程有关的资源，都被记录在进程控制块PCB中。以表示该进程拥有这些资源或正在使用它们。
+　　另外，进程也是抢占处理机的调度单位，它拥有一个完整的虚拟地址空间。
+　　与进程相对应，线程与资源分配无关，它属于某一个进程，并与进程内的其他线程一起共享进程的资源。
+　　当进程发生调度时，不同的进程拥有不同的虚拟地址空间，而同一进程内的不同线程共享同一地址空间。
+　　线程只由相关堆栈（系统栈或用户栈）寄存器和线程控制表TCB组成。寄存器可被用来存储线程内的局部变量，但不能存储其他线程的相关变量。
+　　发生进程切换与发生线程切换时相比较，进程切换时涉及到有关资源指针的保存以及地址空间的变化等问题；线程切换时，由于同进程内的线程共享资源和地址 空间，将不涉及资源信息的保存和地址变化问题，从而减少了操作系统的开销时间。而且，进程的调度与切换都是由操作系统内核完成，而线程则既可由操作系统内 核完成，也可由用户程序进行。图1　多线程与进程之间的关系
+
+
+</body>
+</html>
