@@ -3,20 +3,19 @@ package org.mywiki.cp.monitor;
 import java.util.Random;
 
 public class ReaderWriterProblem {
-	
+
 	public static void main(String[] args) {
 		new ReaderWriterProblem();
 	}
-	
+
 	public ReaderWriterProblem() {
-		ReadersWriters RW = new ReadersWriters();
+		ReadersWriterController controller = new ReadersWriterController();
 		int rounds = 100;
-		new Reader(rounds, RW).start();
-		new Reader(rounds, RW).start();
-		new Writer(rounds, RW).start();
+		new Reader(rounds, controller).start();
+		new Writer(rounds, controller).start();
 	}
 
-	class RWbasic { // basic read or write
+	class ControllerBasic { // basic read or write
 		protected int data = 0; // the "database"
 
 		protected void read() {
@@ -29,7 +28,7 @@ public class ReaderWriterProblem {
 		}
 	}
 
-	class ReadersWriters extends RWbasic { // Readers/Writers
+	class ReadersWriterController extends ControllerBasic { // Readers/Writers
 		int nr = 0;
 
 		private synchronized void startRead() {
@@ -63,12 +62,12 @@ public class ReaderWriterProblem {
 
 	class Reader extends Thread {
 		int rounds;
-		ReadersWriters RW;
+		ReadersWriterController controller;
 		Random r = new Random();
 
-		public Reader(int rounds, ReadersWriters RW) {
+		public Reader(int rounds, ReadersWriterController controller) {
 			this.rounds = rounds;
-			this.RW = RW;
+			this.controller = controller;
 		}
 
 		public void run() {
@@ -78,19 +77,19 @@ public class ReaderWriterProblem {
 				} catch (InterruptedException e) {
 				}
 				;
-				RW.read();
+				controller.read();
 			}
 		}
 	}
 
 	class Writer extends Thread {
 		int rounds;
-		ReadersWriters RW;
+		ReadersWriterController controller;
 		Random r = new Random();
 
-		public Writer(int rounds, ReadersWriters RW) {
+		public Writer(int rounds, ReadersWriterController controller) {
 			this.rounds = rounds;
-			this.RW = RW;
+			this.controller = controller;
 		}
 
 		public void run() {
@@ -100,10 +99,8 @@ public class ReaderWriterProblem {
 				} catch (InterruptedException e) {
 				}
 				;
-				RW.write();
+				controller.write();
 			}
 		}
 	}
-
-
 }

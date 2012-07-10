@@ -3,6 +3,14 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<link rel="stylesheet" href="../js/highlight/styles/default.css">
+<script type="text/javascript" src="../js/highlight/highlight.pack.js"></script>
+<script>
+  hljs.tabReplace = '    ';
+  hljs.initHighlightingOnLoad();
+</script>
+  
+
 <title>并行计算机组织与结构</title>
 </head>
 <body>
@@ -144,18 +152,15 @@ CAS（Compare -And -Swap）简单来说就是由CPU比较内存位置上的值�
 <br>
 
 <h4>线程封闭(Thread Confinement)</h4>
-共享数据需要同步，那么换一个角度来说，不不共享数据就可以避免同步。这种技术叫做线程封闭(Thread Confinement)，它是实现线程安全最简单的方式之一。<br>
-ThreadLocal<br>
-
-//TODO
-
+共享数据需要同步，那么换一个角度来说，不共享数据就可以避免同步。也就是说，我们可以把共享数据的可见范围控制在一个线程之内，这样无须同步也可以保证线程之间不出现数据证用的问题。这种技术叫做线程封闭(Thread Confinement)，它是实现线程安全最简单的方式之一。<br>
+在Java中可以通过java.lang.ThreadLocal来实现这功能。每一个线程的Thread对象中都由一个ThreadLocalMap对象，这个对象存储了一组ThreadLocal.threadLocalHashCode为键，以本地线程变量为值的K-V值对，
+ThreadLocal对象就是对当前线程的ThreadlocalMap的访问入口，每一个ThreadLocal对象都办好了一个独一无二的threadLocalHashCode值得，只用这个值就可以在线程K-V值对中找会对应的线程变量。<br>
+当框架代码需要判断当前运行的是哪个事务时，只需从这个ThreadLocal对象中读取事务上下文。这种机制很方便，因为它避免了在调用每个方法时都要传递执行上下文信息，然而这也将使用这种机制的代码和框架耦合在一起，降低了代码的可重用性。<br>
 </div>
 
 
-
-
-
 <div class="seg">
+
 <h2><a name="1.3">锁优化</a></h2>
 
 <h3>线程引入的开销分析与优化</h3>
@@ -189,19 +194,280 @@ JSR-133：Java Memory Model and Thread Specification Reversion<br>
 <br> 
 
 <h3>Monitor模式</h3>
-//TODO<br>
+我们并不希望每一次对共享数据访问时都需要进行分析以确保程序是线程安全的，而希望能通过封装方式组成更大规模的线程安全的对象。<br>
+对于对象的调用者来说，如果总是需要在调用方法之前进行拿锁，而在调用方法之后进行放锁，这将会使并发应用编程变得更加困难。
+我们在开发并发的应用时，经常需要设计这样的对象，该对象的方法会在多线程的环境下被调用，而这些方法的执行都会改变该对象本身的状态。为了防止竞争条件 (race condition) 的出现，对于这类对象的设计，需要考虑解决以下问题：
+在任一时间内，只有唯一的公共的成员方法，被唯一的线程所执行。<br>
+合理的设计是，该对象本身确保任何针对它的方法请求的同步被透明的进行，而不需要调用者的介入。
+如果一个对象的方法执行过程中，由于某些条件不能满足而阻塞，应该允许其它的客户端线程的方法调用可以访问该对象。<br>
+我们使用 Monitor 设计模式来解决这类问题： 将被客户线程并发访问的对象定义为一个 monitor 对象。
+客户线程仅仅通过 monitor 对象的同步方法才能使用 monitor 对象定义的服务。为了防止陷入竞争条件，在任一时刻只能有一个同步方法被执行。
+每一个 monitor 对象包含一个 monitor 锁，被同步方法用于串行访问对象的行为和状态。
+此外，同步方法可以根据一个或多个与 monitor 对象相关的 monitor conditions 来决定在何种情况下挂起或恢复他们的执行。<br>
+Java中，Object 类本身就是监视者对象， 其使用对象锁 ( 使用 synchronized 获得对象锁 ) 保证工作在共享的数据集上的线程互斥执行 , 使用 notify/notifyAll/wait 方法来协同不同线程之间的工作。<br>
+<br>
+使用Monitor设计模式的例子：<br>
+有限的缓存问题(Bounded buffers)，Basic condition synchronization<br>
+读者写者问题(Readers and Writers),信号广播<br>
+下一个最短时长工作问题(Shortest-job-next)，按优先级等待<br>
+间隔时间问题(Interval timer)， Covering conditions<br>
+睡觉的理发师问题(The sleeping barber)， Rendezvous of processes<br>
+
+<br>
+<h4>有限的缓存问题(Bounded buffers)</h4>
+- 通过互斥实现deposit和fetch方法同步<br>
+- 隐含的条件变量，通过wait, notify,notifyAll来实现 <br>
+<pre><code>
+public class BoundedBuffer {
+	private Object[] buf;
+	private int n, count = 0, front = 0, rear = 0;
+
+	public BoundedBuffer(int n) {
+		this.n = n;
+		buf = new Object[n];
+	}
+
+	public synchronized void deposit(Object obj) {
+		while (count == n)
+			try {
+				wait();
+			} catch (InterruptedException e) {
+			}
+		buf[rear] = obj;
+		rear = (rear + 1) % n;
+		count++;
+		notifyAll();
+	}
+
+	public synchronized Object fetch() {
+		while (count == 0) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+			}
+		}
+		Object obj = buf[front];
+		buf[front] = null;
+		front = (front + 1) % n;
+		count--;
+		notifyAll();
+		return obj;
+	}
+
+}
+</code></pre>
+
+<br>
+<h4>生产者消费者问题(Producers and Consumers)</h4>
+- 通过互斥的方式实现put和take方法的同步<br>
+- 通过wait和notify实现条件同步<br>
+<pre><code>
+public class ProducerConsumerProblem {
+	
+	public ProducerConsumerProblem(){
+		SharedCell cell =  new SharedCell();
+		Producer p = new Producer(cell);
+		Consumer c = new Consumer(cell, 10);
+		p.start();
+		c.start();
+		try {
+			c.join();
+		} catch (InterruptedException e) {
+		}
+		;
+		p.setStop();
+		p.interrupt();
+	}
+
+	public class SharedCell {
+		private int value;
+		private boolean empty = true;
+
+		public synchronized int take() {
+			while (empty) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+				}
+			}
+			empty = true;
+			notify();
+			return value;
+		}
+
+		public synchronized void put(int value) {
+			while (!empty) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+				}
+			}
+			this.value = value;
+			empty = false;
+			notify();
+		}
+	}
+
+	class Producer extends Thread {
+		private SharedCell cell;
+		private boolean Stop = false;
+
+		public Producer(SharedCell cell) {
+			this.cell = cell;
+		}
+
+		public void setStop() {
+			Stop = true;
+		}
+
+		public void run() {
+			int value;
+			while (!Stop) {
+				value = (int) (Math.random() * 100);
+				cell.put(value);
+				try {
+					sleep(value);
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+	}
+
+	class Consumer extends Thread {
+		private SharedCell cell;
+		private int n;
+
+		public Consumer(SharedCell cell, int n) {
+			this.cell = cell;
+			this.n = n;
+		}
+
+		public void run() {
+			int value;
+			for (int i = 0; i < n; i++) {
+				value = cell.take();
+				System.out.println("Consumer: " + i + "value = " + value);
+			}
+		}
+	}
+
+}
+</code></pre>
+
+<br>
+<h4>读者写者问题(Readers and Writers)</h4>
+– 只允许并行读操作<br>
+– 写操作与读操作和其它写操作互斥<br>
+<pre><code>
+public class ReaderWriterProblem {
+
+	public static void main(String[] args) {
+		new ReaderWriterProblem();
+	}
+
+	public ReaderWriterProblem() {
+		ReadersWriterController controller = new ReadersWriterController();
+		int rounds = 100;
+		new Reader(rounds, controller).start();
+		new Writer(rounds, controller).start();
+	}
+
+	class ControllerBasic { // basic read or write
+		protected int data = 0; // the "database"
+
+		protected void read() {
+			System.out.println("read:  " + data);
+		}
+
+		protected void write() {
+			data++;
+			System.out.println("wrote:  " + data);
+		}
+	}
+
+	class ReadersWriterController extends ControllerBasic { // Readers/Writers
+		int nr = 0;
+
+		private synchronized void startRead() {
+			nr++;
+		}
+
+		private synchronized void endRead() {
+			nr--;
+			if (nr == 0)
+				notify(); // awaken waiting Writers
+		}
+
+		public void read() {
+			startRead();
+			System.out.println("read:  " + data);
+			endRead();
+		}
+
+		public synchronized void write() {
+			while (nr > 0)
+				try {
+					wait();
+				} catch (InterruptedException ex) {
+					return;
+				}
+			data++;
+			System.out.println("wrote:  " + data);
+			notify(); // awaken another waiting Writer
+		}
+	}
+
+	class Reader extends Thread {
+		int rounds;
+		ReadersWriterController controller;
+		Random r = new Random();
+
+		public Reader(int rounds, ReadersWriterController controller) {
+			this.rounds = rounds;
+			this.controller = controller;
+		}
+
+		public void run() {
+			for (int i = 0; i < rounds; i++) {
+				try {
+					sleep(r.nextInt(1000));
+				} catch (InterruptedException e) {
+				}
+				;
+				controller.read();
+			}
+		}
+	}
+
+	class Writer extends Thread {
+		int rounds;
+		ReadersWriterController controller;
+		Random r = new Random();
+
+		public Writer(int rounds, ReadersWriterController controller) {
+			this.rounds = rounds;
+			this.controller = controller;
+		}
+
+		public void run() {
+			for (int i = 0; i < rounds; i++) {
+				try {
+					sleep(r.nextInt(1000));
+				} catch (InterruptedException e) {
+				}
+				;
+				controller.write();
+			}
+		}
+	}
+}
+</code></pre>
+
+
+
+
 
 </div>
-
-
-
-
-
-
-
-
-
-
 
 </div>
 </body>
