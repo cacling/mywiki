@@ -164,18 +164,205 @@ ThreadLocal对象就是对当前线程的ThreadlocalMap的访问入口，每一�
 <h2><a name="1.3">锁优化</a></h2>
 
 <h3>线程引入的开销分析与优化</h3>
-－上下文切换<br>
-- 内存同步<br>
-- 阻塞<br>
+单线程程序既不会存在线程的调度，也不存在同步的开销。在多个线程的协调和调度必然需要一定的性能开销，所以有时候为了提升性能而引入多线程，反而开销的消耗超过提升的幅度。
+如果运行的线程数大于CPU的数量，那么操作系统会把某个正在运行的线程调度出来，从而使其它线程能使用CPU，这将导致一次上下文的切换。
+上下文的切换有两部分，一部分是操作系统和JVM的开销，另一部分是缓存重载时的开销，因为一个新线程被切换进来时，它所需要的数据可能不再当前处理器的本地缓存之中。
+所以即使有很多线程在等待执行，操作系统的调度器也会保证线程运行的最小执行时间，当然这会以损失一部分相应性作为代价。
+当线程因为等待某个发生竞争的锁或者I/O而被阻塞时，JVM通常会把这个线程挂起，并允许它被切换出去。在linux中可以通过vmstat命令在查看上下文切换的次数以及在内核中执行时间所占比例的星系。如果内核占用比率比较高(如超过10%)，那么表示调度发生得很频繁，这很可能是由I/O或者竞争锁导致的阻塞引起的。
+上面提到的无阻塞算法有助于减少上下文切换。
 
-<h3>Java锁优化方案</h3>
-锁优化<br>
+锁消除和粗化<br>
+现代的JVM能通过优化来去掉一些不会发生竞争的锁，从而减少不必要的同步开销。如果一个锁对象只能由当前线程访问，不会与其它线程产生同步，那么JVM就可以通过优化来去掉这个锁。例如
+<pre><code>
+synchronized(new Object()) {
+	//Do something here ......
+}
+</code></pre>
+此外，JVM会将邻近的同步代码块用同一个锁合并起来，这叫做锁粗化(Lock Coarsening)。例如
+<pre><code>
+public String getNames() {
+	List<String> names = new Vector<String>();
+	names.add("Moe");
+	names.add("Larry");
+	names.add("Curly");
+	return names.toString();
+}
+</code></pre>
+在getNames方法中，JVM会把3个add与1个toString调用合并为单个锁操作以减少同步开销。
+JVM中对于非竞争同步带来的开销的优化已经很充分，所以我们应该把优化的重点放在那些真正发生锁竞争的地方。
+
 自旋锁<br>
-锁消除<br>
-锁粗化<br>
+JVM在实现阻塞时，会采用自旋等待(Spin-Waiting)，通过循环不断地尝试获取锁，直到成功。这个效率的高低，取决于上下文切换的开销以及在成功获取锁之前需要等待的时间。
+如果等待的时间比较短，则适合采用自旋的方式，如果等待的时间长，则适合采用线程挂起的方式。
+JVM会根据历史等待时间的分析数据在这两者之间进行选择。
+
+锁优化<br>
+当锁竞争不可避免时，有两个方面影响锁发生的可能性：
+- 锁的持有时间
+- 锁请求的频率
+
+有3种方式可以降低锁的竞争程度：
+- 减少锁的持有时间
+- 降低锁的请求频率
+- 使用带有协调机制的独占锁，这些机制支持更高的并发性
+
+减少锁的持有时间
+减少锁的持有时间能有效降低发生竞争的可能性。如果某个操作持有锁的时间超过2毫秒，而且所有的操作都需要这个锁，那么无论拥有多少个空闲处理器，吞吐量也不会超过每秒500个操作。
+如果将这个锁的持有时间降低为1毫秒，那个能够将这个锁对应的吞吐量提高到每秒1000个操作。
+例如可以将一些与锁无关的代码移除出代码块，尤其是开销大的操作，例如大量的计算操作，以及可能被阻塞的操作，例如I/O操作。
+
+如例子所示，通过缩小userLocationMathes方法中锁的作用范围，能减少在持有锁的时间，根据Amdahl定律，因为串行代码的量减少了，更有效的提高并行的效率。
+<pre><code>
+public class AttributeStore {
+
+	private final Map<String, String> attributes = new HashMap<String, String>();
+
+	public synchronized boolean userLocationMathes(String name, String regexp) {
+		String key = "users." + name + ".location";
+		String location = attributes.get(key);
+		if (location == null) {
+			return false;
+		} else {
+			return Pattern.matches(regexp, location);
+		}
+	}
+
+}
+</code></pre>
+<pre><code>
+public class AttributeStore {
+
+	private final Map<String, String> attributes = new HashMap<String, String>();
+
+	public boolean userLocationMathes(String name, String regexp) {
+		String key = "users." + name + ".location";
+		String location;
+		synchronized (this){
+			location = attributes.get(key);
+		}
+		if (location == null) {
+			return false;
+		} else {
+			return Pattern.matches(regexp, location);
+		}
+	}
+
+}
+</code></pre>
+然而，缩小同步代码并不一定带来效率的提升，因为同步代码过小，就会分解为多个同步代码块，同步需要一定的开销，所以反而会对性能带来负面的影响。需要在代码块大小与数量间作一个平衡。
+
+降低锁的请求频率
+降低锁的请求频率可以通过锁分解和锁分段等技术来实现。这些技术中采用多个相互独立的锁来保护独立的状态变量，从而改变这些变量在之前由单个锁来保护的情况。
+锁分解
+例如将锁的请求分布到更多的锁上，那么能有效地降低竞争程度。由于等待锁而被阻塞的线程会更少。
+这些技术能减少锁操作的粒度，然而锁越多，发生死锁的几率就越高。
+如下面例子，原先是用ServerStatus作为锁来保护用户状态和查询状态，在对锁进行分解后，每个新的细颗粒度锁上的访问量比原先一个锁的访问量少。
+如果在锁上的竞争并不激烈时，在性能和吞吐量等方面带来的提升将很有限。
+<pre><code>
+public class ServerStatus {
+
+	public final Set<String> users = new HashSet<String>();
+
+	public final Set<String> queries = new HashSet<String>();
+
+	public synchronized void addUser(String u) {
+		users.add(u);
+	}
+
+	public synchronized void addQuery(String q) {
+		queries.add(q);
+	}
+
+	public synchronized void removeUser(String u) {
+		users.remove(u);
+	}
+
+	public synchronized void removeQuery(String q) {
+		queries.remove(q);
+	}
+
+}
+</code></pre>
+
+<pre><code>
+public class ServerStatus {
+
+	public final Set<String> users = new HashSet<String>();
+
+	public final Set<String> queries = new HashSet<String>();
+
+	public  void addUser(String u) {
+		synchronized(users){
+			users.add(u);
+		}
+	}
+
+	public void addQuery(String q) {
+		synchronized(queries){
+			queries.add(q);
+		}
+	}
+
+	public void removeUser(String u) {
+		synchronized(users){
+			users.remove(u);
+		}
+	}
+
+	public void removeQuery(String q) {
+		synchronized(queries){
+			queries.remove(q);
+		}
+	}
+
+}
+</code></pre>
+
+锁分段
+上面ServerStatus锁分解例子中，把一个竞争激烈的锁分解为两个锁，但缺不能进一步分解，这影响了可伸缩性的进一步提高。
+在某些情况下，可以将锁分解技术进一步扩展为对一组独立对象上的锁进行分解，这种情况叫锁分段。
+例如，在ConcurrentHashMap的实现中使用了一个包含16个锁的数组，每个锁保护所有散列桶的1/16，其中第N个散列桶由第（N mod 16）个锁来保护。假设散列函数具有合理的分布性，并且关键字能够实现均匀分布，那么这大约能把对于锁的请求减少到原来的1/16。
+<pre><code>
+public class StripedMap {
+	
+	private static final int N_LOCKS = 16;
+	
+	private final Node[] buckets;
+	
+	private final Object[] locks;
+	
+	private static class Node {......}
+	
+	private final int hash(Object key){
+		return Math.abs(key.hashCode() % buckets.length);
+	}
+	
+	public Object get(Object key){
+		int hash = hash(key);
+		synchronized (locks[hash %N_LOCKS]){
+			for(Node m = buckets[hash];m!=null;m=m.next())
+				return m.value();
+		}
+		return null;
+	}
+	
+	public void clear(){
+		for(int i =0;i < buckets.length;i++){
+			synchronized (locks[i % N_LOCKS]){
+				buckets[i] = null;
+			}
+		}
+	}
+
+}
+</code></pre>
+
 轻量级锁<br>
 偏向锁<br>
 //TODO<br> 
+
+
+如何监测锁竞争情况
 
 </div>
 
