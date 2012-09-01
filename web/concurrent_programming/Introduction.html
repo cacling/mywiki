@@ -3,43 +3,226 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
-<title>并行编程简介</title>
+<link rel="stylesheet" href="../js/highlight/styles/default.css">
+<script type="text/javascript" src="../js/highlight/highlight.pack.js"></script>
+<script>
+  hljs.tabReplace = '    ';
+  hljs.initHighlightingOnLoad();
+</script>
+<title>并发编程简介</title>
 </head>
 <body>
 <div id="container">
 
-<div class="seg">
+<div class="seg"><h2><a name="1.1">何以济大事，分而以治之</a></h2>
+在计算机的历史上，有各种各样复杂的科学计算和基于真实世界的工程问题，如生物工程,量子科学,医学成像，石油勘探，机械工程，电路设计等等。
+即使计算机在不断的高速发展，单台计算机的能力每年都在不断的翻倍，但一定时间范围内单台计算能力还是有限的。
+解决这些相当庞大而复杂的大规模问题，依赖单台计算机来解决是不切实际或者根本不可能的,必须通过并行计算完成。<br>
+<br>
+通过并行计算，可以给我们带来至少2方面的好处：<br>
+- 节省时间：某些计算用单机几十年都无法完成的计算可以通过并行计算在可控时间内可以完成<br>
+- 节省成本：可以使用便宜的、甚至市面将要淘汰的CPU来构建并行集群来代替高成本的硬件<br>
+<br>
+在过去的20年里，更快速网络、分布式系统、多核处理器体系结构（甚至是在桌面应用级别）的发展趋势已经很清楚的指出并行化是未来科学计算的发展方向。<br>
+<br>
 
-<h2><a name="1.1">什么是并行编程</a></h2>
-并行计算（parallel computing）是由运行在多个部件上的小任务合作，来求解一个规模很大的复杂计算问题的一种方法。
-<img alt="" src="i/WhatisParallelComputint.jpeg" width="600px"><br>
-//TODO<br>
 
-<h2><a name="1.2">并行编程的原因</a></h2>
-－节省时间<br>
-－解决大型问题<br>
-－利用并发优势<br>
-//TODO<br>
+<h2><a name="1.2">并行编程的4个步骤</a></h2>
+并行计算的核心思想是分而治之。
+分治的基本思想是将一个规模为N的问题分解为K个规模较小的子问题，这些子问题相互独立且与原问题性质相同。求出子问题的解，就可得到原问题的解。
+并行编程的步骤分为4步，分解->分配->协调->合并<br>
+<br>
+分解：将要解决的问题划分成若干规模较小的同类问题， 把计算分解为多个子问题<br>
+分配：当子问题划分得足够合适的小的时候，把自问题按任务分配给多个线程去处理<br>
+协调：通过共享方式存储或传递方式得到中间数据<br>
+合并： 按原问题的要求，将子问题的解逐层合并构成原问题的解<br>
+<br>
 
-<h2><a name="1.3">并行化方法</a></h2>
-并行化的主要方法是分而治之：
-<img alt="" src="i/ProgramExecutionLevels.jpeg" width="600px"> <br>
-任务并行——根据问题的求解过程，把任务分成若干子任务(任务级并行或功能并行)。<br>
-数据并行——根据处理数据的方式，形成多个相对独立的数据区，由不同的处理器分别处理。<br>
-指令并行——。。。。。<br>
+各个步骤有各自的难点：
 
-Program: an executable file with one or multiple tasks. <br>
-Process: instance of a program in execution. It has its own address space, and 
-interacts with other processes only through communication mechanisms 
-managed by the OS. <br>
-Task: execution path through the address space that has many instructions. 
-(Some times task and process are used interchangeably).<br> 
-Thread: stream of execution used to run a task. It’s a coding construct that does 
-not affect the architecture of an application. A process might contain one or 
-multiple threads all sharing the same address space and interacting directly.<br> 
-Instruction: a single operation of a processor. A thread has one or multiple 
-instructions. <br>
+<h3>分解步骤</h3>
+<h4>问题可否被并行化(Can the Problem be parallelized?)</h4>
+需要了解问题是否存在数据依赖的限制，这种限制是不可并行化的，例如Fibonacci数列（1，1，2，35，8，13，21……）F(K+2)=F(K+1)+F(K)<br>
+<br>
+<h4>问题分解(Partitioning)</h4>
+将问题分解成离散的可以被分配到多任务中的工作块。有两种方式：按作用域分解和按功能分解。<br>
+- 按作用域分解：<br>
+在这个方法中，与问题相关的数据将会被分解。每个并行的任务只能使用部分数据。<br>
+- 按功能分解：<br>
+在这种方式中，主要关注要被完成的计算而不是操作数据的计算。问题是根据当前一定要完成的任务划分的。每个任务完成全部工作的一部分。<br>
+<br>
+<h4>粒度(Granularity)</h4>
+分解问题时需要决定自问题的力度，子问题应该是细粒度还是粗粒度很多时候是个很纠结的问题。
+细粒度可以有助于把任务的负载平衡，但意味着高通信开销，低的计算通信率，降低了性能提升的可能性。<br>
+如果粒度太小很可能任务间的通信和同步所需要的花费时间比用在计算上的还长。<br>
+粗粒度高计算通信率，但却更难进行有效的负载平衡调度。<br>
+哪个更好？<br>
+·最高效的粒度是由算法和当前硬件平台决定的。<br>
+·通常情况下，通信和同步的开销很大程度上取决于执行速度，这样使用粗粒度较好。<br>
+·细粒度并行机制可以减少负载不平衡所带来的开销。<br>
+<br>
+<br>
 
+<h3>分配步骤</h3>
+<br>
+<h4>负载平衡(Load Balancing)</h4>
+·负载平衡指的是使所有分布式的工作高效运行、是CPU可以保持较高的利用率较少的等待。也可以看作是将任务空闲时间最小化的方法。<br>
+·对于提升系统性能来说，负载平衡是十分重要的。例如，所有的任务都要在障碍处同步，最慢的任务将决定全局的时间开销。<br>
+我们可以通过动态工作分配来提升负载平衡的效率，
+例如当进程完成任务的数量很难确定或者不可以预测的时候，使用调度线程池模型可能会有所帮助。当任务完成自己的工作后，它排队去申请新的工作。<br>
+我们有必要设计算法去检查和处理在程序中动态的发生的负载不平衡现象。<br>
+<br>
+
+<h4>数据依赖(Data Dependencies)</h4>
+当程序的执行顺序影响程序的执行结果时，我们说程序间存在依赖。<br>
+依赖问题在并行编程中是极其重要的，也是限制并行机制的主要因素。<br>
+例如有两种最常见的数据依赖形式：<br>
+·循环中的数据依赖：<br>
+<pre><code>
+for (int i = 0; i < a.length; i++) {
+	a[i] = a[i-1] * 2;
+}
+</code></pre>
+A(J-1) <br>的值一定要在计算A(J)值之前计算，因此A(J)的值依赖A(J-1)的值。不能并行。0<br>
+如果任务2计算A(J)，任务1计算A(J-1)，想要得到正确的A(J)的值必须要.<br>
+·循环独立数据依赖<br>
+task 1　　　　　　　 task 2<br>
+------　　　　　　　 ------<br>
+X = 2　　　　　　　　 X = 40<br>
+Y = X*2　　　　　       Y = X*30<br>
+像前面的例子一样，这个例子也是不能并行化的，Y值依赖于：<br>
+1）分布式内存体系结构——X的值在任务之间是否通信或者何时通信都存在一定的数据依赖。<br>
+2）共享内存体系结构——哪个任务最后将X保存。<br>
+<br>
+当设计并行程序的时候，识别所有的数据依赖是很重要的。并行化的主要目标可能是循环，所以识别循环中的依赖问题更为重要。<br>
+如何处理数据依赖<br>
+·分布式内存体系结构——在同步点上需要通信数据。<br>
+·共享内存体系结构——在任务之间同步读写操作。<br>
+<br>
+
+
+<h3>协调步骤</h3>
+<h4>通信(Communications)</h4>
+谁需要通信？任务之间是否需要通信取决于您要解决的问题。<br>
+实际上有些类型的问并行执行时并不需要任务间共享数据，所以不需要通信。
+例如：假设一个图像处理的程序在处理的图像只有黑色，黑色的像素都反转成黑色。
+图像数据很容易就可以被分解到多个任务上，这些任务显然可以独立执行完成自己的那部分工作。<br>
+然而大多数并行应用程序没有这么简单，任务间需要彼此共享数据。
+例如，模拟3D的热扩散问题，其中一个任务的温度计算要知道他周围的任务的计算数据。周围数据改变将直接影响此任务的数据。<br>
+值的留意的是通信开销相关的一些问题：
+- 频繁的任务间通信需要同步方法，同步使任务把时间花费在等待上而没有工作。
+（同步通信通常是指一项任务完成后等待与他要通信的任务，后者完成计算后才可以进行通信。）<br>
+- 原本用于计算的机器时钟周期和计算资源将被用于给数据打包并传输。
+- 通信传输的竞争可能会占用大量的带宽，甚至影响性能。<br>
+如果发送很多小消息的话，延迟可能会占用绝大多数的通信资源。将小消息打包成大消息一次性传递通常更加高效，也会增加有效通信带宽。<br>
+<br>
+<h4>同步(Synchronization)</h4>
+当一个任务完成通信操作，需要某种调度方法来调度其他参与通信的任务。
+例如：当一个任务完成发送数据的操作他必须等待接受任务的确认信息，才可以说明发送成功。<br>
+//TODO
+<br>
+<br>
+
+
+
+<h2><a name="1.3">The quadrature problem</a></h2>
+我们来看一个我们理工科班出身的人最熟悉的一个例子：
+计算连续函数 ƒ(x) 从a到b的值。从数学上我们可以通过定积分的方式得到。
+如果通过编程的如何做到呢？
+<pre><code>
+double fl = f(a), fr, area = 0.0;
+double dx = (b-a)/ni;
+for [x = (a + dx) to b by dx] {
+	fr = f(x);
+	area = area + (fl + fr) * dx / 2;
+	fl = fr;
+}
+</code></pre>
+
+上面很明显的是我们上面提到的循环内依赖，我们可以通过改进算法使其转化为可并行计算。
+我们通过二分的方法不断的把面积切割成小块。、
+首先指定一个最小误差值e，当 |(larea + rarea) - area| > e 时，不断地以相同的方式递归计算左半边和右半边的值，退出条件左半边和右半边求和返回。
+
+The second approximation can be computed for ≥ 2 subintervals
+•If |(larea + rarea) - area| > e, repeat computations for each of the intervals [a, m] and [m,b] in a similar way until the difference between consecutive approximations is within a given e
+<pre><code>
+double quad(double l,r,fl,fr,area) {
+	double m = (l+r)/2;
+	double fm = f(m);
+	double larea = (fl+fm)*(m-l)/2;
+	double rarea = (fm+fr)*(r-m)/2;
+	if (abs((larea+rarea)-area) > e) {
+		larea = quad(l,m,fl,fm,larea);
+		rarea = quad(m,r,fm,fr,rarea);
+	}
+	return (larea + rarea);
+}
+</code></pre>
+
+这种情况下就可以把它轻易的改变成可以并发计算的了
+<pre><code>
+double quad(double l,r,fl,fr,area) {
+	double m = (l+r)/2;
+	double fm = f(m);
+	double larea = (fl+fm)*(m-l)/2;
+	double rarea = (fm+fr)*(r-m)/2;
+	if (abs((larea+rarea)-area) > e) {
+		co larea = quad(l,m,fl,fm,larea);
+		|| rarea = quad(m,r,fm,fr,rarea);
+		oc
+	}
+	return (larea + rarea);
+}
+</code></pre>
+
+</div>
+
+<div class="seg"><h2><a name="1.2">并行性能评估方法</a></h2>
+然而随着核数的增加，软件的运行速度并没有相应成倍的增长<br>
+<br><br>
+G.M.Amdahl在1967年提出了Amdahl’s law，针对并行处理的给出了一个模型，指出使用并行处理的提速由问题的可并行的部分所决定。<br>
+speedup=1/（串行部分比例+（1-串行部分比例）/核的数量） <br>
+S为问题中可被并行处理的部分的比例,n为并行处理器的数量，Speedup为并行后相比串行时的提速。例如：<br>
+按照Amdahl定律，，在10个CPU环境下即使我们把可并行处理部分提高到90％得到5倍左右的加速。如果核的数目为无限大，那么加速比的理论上限值为1/串行部分比例。<br>
+1988年sandia national lab的Gustafson等人，在用1024个处理器的超立方体结构上做实验时，发现加速比随着处理器的数量呈现行增长。<br>
+他们用计算加速比的定义简单推导：<br>
+speedup = (s+p*n)/(s+p) = s+p*n = n+(1-n)*s.<br> 
+这就是著名的Gustafson公式，其中s为串行部分比例，n为核的数目。<br>
+<br> 
+这两个定律对于加速比的计算为什么会产生如此截然不同的结论呢？实际上，Amdahl定律有三个潜在前提：<br> 
+1）最有算法的性能严格受限于CPU资源的可用性。<br> 
+2）串行算法是给定问题的最优解决方案。<br> 
+3）处理核增长的时候，问题的规模不变。<br> 
+任何违背这三个假设的实例都可以打破Amdahl定律，也就是说，Amdahl定律对违背这三个假设的问题来说，是谬误的。Gustafson等人做的那三个实验属于大规模并行处理，违背了第三个假设。违背第一个假设和第二个假设的实例也很多。<br>
+<br> 
+比较这两个定律<br> 
+Amdahl定律: 假设两个城市之间的距离是60km，一辆车花了一个小时走了头30km。无论在以后的30km里它开多快，都没有办法达到90km/h。因为你已经用了一个小时，而你的距离只有60km，所以最多也就是60km/h<br> 
+Gustafson 定律：假设一辆车以低于90km/h的速度行驶，那只要给足够长的路它走，那平均下来有肯能达到90km/h或者更高<br> 
+<br> 
+实际上，Amdahl定律和Gustafson定律是等价的，但等价的前提是，要重新计算公式中的s。在Amdahl定律中，认为s是独立于n 的变量，而实际上在大规模并行处理问题中，s是依赖于n的变量。在这里，假定Amdahl定律中的s为s1,而Gustafson 定律中的s为s2.那么s1与s2实际上可以很简单地推出如下关系：s1=1/(1+(1-s2)*p/s2).将这个式子带入Amdahl定律，就是Gustafson定律的公式了。Gustafson当时并没有意识到这点，他只是按照他的实验推导出了他的公式。<br>
+ <br> 
+Amdahl定律的价值：<br> 
+1. 无限的处理器核并不能带来性能上的无限增长，即应用程序从可并行部分所获得的性能提升最大值受限于串行部分所占的比例。<br> 
+2. 对于加速程序性能而言，减少程序中串行部分所占的比例，增加并行部分比例的方法将比增加处理器核的数量的方法更有实际意义。<br> 
+3. 只有当程序的大部分都是可并行代码的时候，增加处理器核的数量才会比增加并行代码的比例更加有效。 <br> 
+<br> 
+加速比性能定律p/logp <=s <=p <br>
+Amdahl定律:负载不变，减少时间 <br>
+s=(f+(1-f))/(f+(1-f)/p) s--->1/f <br>
+Gustafson定律：时间不变，提高规模(精度) <br>
+S=f+p(1-f)=p+f(1-p)=p-f(p-1) <br>
+Sun和Ni定律:存储受限的加速定律 <br>
+S=(f+(1-f)G(p))/(f+(1-f)G(p)/p)  G(p)=1 :Amdahl;G(p)=p,Gustafson <br>
+可扩放性评测标准(目的) <br>
+确定某类问题用哪种并行算法与哪种并行体系结构结合，可以有效地利用大量处理器； <br>
+运行于某种体系结构的并行机上的某种算法，根据在小规模机器上的运行性能，预测在大规模机器上的性能 <br>
+对固定的问题规模，确定最有的处理机数和加速比 <br>
+指导改进算法、体系结构，以利用可扩充的大量处理器 <br>
+可扩放性评测标准： <br>
+等效率度量标准:随着系统规模的增加，测量增加多少运算量会保持效率不变。E=s/p <br>
+等速度度量标准：系统规模增加时，若保持速度不变，每个处理器增加浮点操作的量V=Wp/pTp <br>
+等计算时间/通信开销比率度量标准：系统规模增加时，保持计/通比不变所需要增加的问题规模。 <br>
+计算时间/通信开销比率：并行计算时间与系统开销之比。 <br>
 </div>
 
 </div>
