@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<link rel="stylesheet" href="../js/highlight/styles/default.css">
+<script type="text/javascript" src="../js/highlight/highlight.pack.js"></script>
+<script>
+  hljs.tabReplace = '    ';
+  hljs.initHighlightingOnLoad();
+</script>
+
+<title>Higher Order Functions</title>
+</head>
+<body>
+
+函数式编程最重要的一个特征，就是其函数可以像任何其他类型的数据一样被处理。
+在Erlang中，一个fun就是一个函数
+Bump = fun(Int) -> Int + 1 end.
+Bump(10).
+(fun(Int) -> Int + 1 end)(10).
+
+让我们看一下函数作为参数的方便之处的例子。
+对列表的操作最常见的操作之一是访问列表中的每个元素，并以某种方式将各元素转化。
+让我们来看两个例子：
+<div class="erlang"><pre><code>
+doubleAll([]) -> [];
+doubleAll([X|Xs]) -> [X*2|doubleAll(Xs)]. 
+</code></pre></div>
+<div class="erlang"><pre><code>
+revAll([]) -> [];
+revAll([X|Xs]) -> [1/X|revAll(Xs)]. 
+</code></pre></div>
+
+从这两个例子中我们可以看到相同和不同之处，相同之处就是对列表中每个元素进行操作，不同之处就是对每个元素的操作方式不同。
+因此，我们可以通过给出一个map函数。其第一个参数是函数，该函数对列表中每个元素进行操作：
+<div class="erlang"><pre><code>
+map(_,[]) -> [];
+map(F,[X|Xs]) -> [F(X) | map(F,Xs)].
+</code></pre></div>
+
+map(fun(X)->2*X end,[1,2,3]).
+
+
+diff(L1, L2) -> 
+    filter(fun(X) -> not member(X, L2) end, L1).
+
+
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<link rel="stylesheet" href="../js/highlight/styles/default.css">
+<script type="text/javascript" src="../js/highlight/highlight.pack.js"></script>
+<script>
+  hljs.tabReplace = '    ';
+  hljs.initHighlightingOnLoad();
+</script>
+
+<title>Recursive definition</title>
+</head>
+<body>
+
+
+
+
+阶乘(factorial) <br>
+n! = 1             n=0 <br>
+     n  n*(n-1)    n>0 <br>
+ <br>
+<div class="java"><pre><code>
+public static long factorial(int n) {
+	if (n == 1) {
+		return 1;
+	} else {
+		return n * factorial(n - 1);
+	}
+}
+</code></pre></div>
+ <br>
+<div class="erlang"><pre><code>
+fac(0) -> 1;
+fac(N) when N > 0 
+  	   -> N * fac(N-1).
+</code></pre></div>
+
+<br>
+列表(list) <br>
+列表是用来存储元素的集合。列表使用方括号来定义，元素之间通过逗号来分割。列表中的元素可以是不同的数据类型。
+例如：
+[a,b,c]
+[1,2,d]    //可以包含不同类型的元素
+[a,[b,[c,d,e],f],g]
+（列表[a,[b,[c,d,e],f],g]的长度是3.第一个元素是a，第二个元素是[b,[c,d,e],f]，第三个元素是g。）
+
+列表只要不为空，就可以把一个列表分成头部和尾部。
+头部是指列表的第一个元素，尾部是指一个包含所有剩余元素的列表，而这个列表可以继续这样分解下去，直到剩余元素为空。
+list = [Element | list]
+反之，我们可以用一个元素和列表组成一个新的列表。
+
+例如，以下这些列表的语义上都是等价的：
+[a,b,c,d]
+[a,b,c,d|[]]
+[a,b|[c,d]]
+[a,b|[c|[d|[]]]]
+[a|[b|[c|[d|[]]]]]
+
+例子
+求数字数组的总和
+两种情形
+- 如果第一个数组为空，则数组总和为0
+- 如果第一个数组不为空，则数组[H|T]的总和,是H加上子数组[T]的总和
+<div class="erlang"><pre><code>
+sum([]) -> 0;
+sum([Head|Tail]) -> Head + sum(Tail).
+</code></pre></div>
+
+递归的过程
+sum([1,2,3]) => 1 + sum([2,3])
+	sum([2,3]) => 2 + sum([3])
+		sum([3]) => 3 + sum([])         
+			sum([]) => 0
+			3 + 0 => 3
+		3 <=
+		2 + 3 => 5
+	5 <=
+	1 + 5 => 6
+6 <=
+
+思考
+求解数组的长度
+两种情形
+- 空数组长度为0
+- 数组[H|T]的长度是1加上子数组[T]的长度
+<div class="erlang"><pre><code>
+len([]) -> 0;
+len([Head|Tail]) -> 1 + len(Tail). 
+</code></pre></div>
+
+再思考
+我们得到警告信息
+Warning: variable 'Head' is unused
+<div class="erlang"><pre><code>
+len([]) -> 0;
+len([_|Tail]) -> 1 + len(Tail). 
+</code></pre></div>
+我们使用不关心变量 '_'，用以说明对列表头部值不感兴趣
+
+
+思考尾递归
+尾递归
+http://baike.baidu.com/view/1439396.htm
+<div class="erlang"><pre><code>
+sum(List) -> sum_acc(List,0).
+sum_acc([],Sum) -> Sum;
+sum_acc([Head|Tail],Sum) -> sum_acc(Tail, Head+Sum).
+</code></pre></div>
+
+sum([1,2,3]) => sum_acc([1,2,3],0)
+sum_acc([1,2,3],0) => sum_acc([2,3],1)
+sum_acc([2,3],1) => sum_acc([3],3)
+sum_acc([3],3) => sum_acc([],6)
+sum_acc([],6) => 6
+
+思考
+用尾递归求数组长度
+<div class="erlang"><pre><code>
+len(List) -> len_acc(List,0).
+len_acc([], Length) -> Length;
+len_acc([_|Tail],Length) -> len_acc(Tail, Length+1).
+</code></pre></div>
+
+求数字数组的平局值
+<div class="erlang"><pre><code>
+avg(List) -> sum(List) / len(List).
+</code></pre></div>
+如何做尾递归？
+<div class="erlang"><pre><code>
+avg(List) -> avg_acc(List,0,0).
+avg_acc([],Sum,Length) -> Sum / Length;
+avg_acc([H|T],Sum,Length) -> avg_acc(T,Sum+H,Length+1).
+</code></pre></div>
+
+
+
+合并两个数组
+- 如果第一个数组是空，则结果是第二个数组
+- 如果第一个数组不为空，则结果是第一个数组的第一个元素H，和T合并第二个数组的列表，所组成的列表
+<div class="erlang"><pre><code>
+append([],List2) ->  List2;
+append([Head|Tail],List2) -> [Head | append(Tail,List2)].
+</code></pre></div>
+
+反转数组元素
+- 如果数组是空，则组结果为[]
+- 如果数组[H|T]不为空，则结果是 reverse(T)后再append
+<div class="erlang"><pre><code>
+reverse([]) -> [];
+reverse([Head|Tail]) -> append(reverse(Tail),[Head]).
+</code></pre></div>
+ 
+
+</body>
+</html>

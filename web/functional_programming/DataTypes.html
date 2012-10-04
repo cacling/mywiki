@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<link rel="stylesheet" href="../js/highlight/styles/default.css">
+<script type="text/javascript" src="../js/highlight/highlight.pack.js"></script>
+<script>
+  hljs.tabReplace = '    ';
+  hljs.initHighlightingOnLoad();
+</script>
+
+<title>Data types</title>
+</head>
+<body>
+
+Erlang里面每个变量只会被赋值一次
+
+Primitive Types
+
+整数 Integers
+Integers在Erlang里可以是正整数或负整数。最大正整数的概念在Erlang里是不存在的，一个整数究竟能有多大，在erlang中它唯一的限制是实际使用的机器的可用内存。
+(注释： 
+当一个整数大到一个word不能容纳的时候，Erlang会自动把它转换成用多个word表示的bignums类型。
+bit有0和1，一个byte是8个bit所以最大值有256(2^8)，
+word，与系统硬件（总线、cpu命令字位数等）有关，如数据总线为16位，则1word为2byte。
+一个word两个byte时最大值65535(2^16),
+在window上一个word是4bytes(32 bits)，最大值到 40亿.
+）
+
+浮点数 float
+Erlang中浮点数的精确度是由IEEE 754-1985标准中的64位表示法来保证的。
+17.368 -56.654 1.234E-10
+
+布尔类型 Boolean
+1==2.
+false
+1<2.
+true
+
+Char
+a, b, c
+
+
+元组 tuple
+tuple是用来保存一组数据元素的复合数据类型。tuple使用封闭的花括号{...}来表示，元素间用逗号隔开。
+tuple中的数据并不一定要是相同的类型。
+{123,abc}
+{abc,{def,123},efg}
+
+{person, 'Joe', 'Armstrong'}
+{person, 'Mike', 'Williams'}
+当一个元组的第一个元素是一个基元时，称它为标记（tag）。
+{person, 'Joe', 'Armstrong'}中，基元person是标记。
+使用第一个位置的标记是为了区分代码中使用不同的元组的不同目的。有助于在接受数组时区分出数据的种类。
+
+列表 List
+列表和元组都是用来存储元素的集合。
+列表使用封闭的方括号 [...]来定义，元素之间由逗号隔开。列表中哦你的元素和元组一样不一定是相同的数据类型          
+
+列表和元组的处理方式非常的不同。列表只要不为空，就可以把一个列表分成头部和尾部。
+列表的头部是指列表的第一个元素，尾部是一个包含所有剩余元素的列表，而这个列表可以一直这样分解下去。
+
+
+http://css.dzone.com/articles/erlang-tuples-and-lists
+
+
+
+
+列表  List
+
+</body>
+</html>

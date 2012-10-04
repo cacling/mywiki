@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../web/css/common.css" type="text/css" charset="utf-8" />
+<link rel="stylesheet" href="../js/highlight/styles/default.css">
+<script type="text/javascript" src="../js/highlight/highlight.pack.js"></script>
+<script>
+  hljs.tabReplace = '    ';
+  hljs.initHighlightingOnLoad();
+</script>
+
+<title>Javascript in Functional Programming</title>
+</head>
+<body>
+
+最近的几个月，我一直在学习一种叫Haskell的编程语言。由于里面有太多的从未遇到的编程概念，整个过程就像是完全重新学习如何编程。在i.TV网站上，我写了很多JavaScript(node.js和前端代码)。虽然有不少的函数式/haskell式的编程模式不能引用进来，但仍有大量的技术思想让我在使用javascript编程语言时受益不少。
+
+
+你会发现Haskell库里有能够处理各种事情的各种各样的函数。起初我以为这些只是一种技术上的积累，但随后我认识到，这些函数相比起其它语言里的函数，它们能应用到形式更广泛的问题中。这使得它们更有价值，因为我们都不太喜欢对一些常见的问题还不得不自己去写解决方案。
+
+这些函数是可以相互组合1的：它们能针对性的解决某些问题，而不对你的代码做任何依赖，所以，你可以拼装它们，组合成一个能够解决你的大问题的东西。
+
+高阶函数(Higher Order Functions)
+
+在Haskell语言中，最多的被反复使用的函数都是高阶函数(higher order functions)——能以函数作为参数、能返回函数的函数。这使得它们具有固有的灵活性。下面是一个不太灵活的函数：它计算一个数组里等于某个值的元素的个数。
+
+// 不灵活
+function countMatching(array, value) {
+    var counted = 0
+    for (var i = 0; i < array.length; i++) {
+        if (array[i] == value) 
+            counted++
+    }
+    return counted
+}
+
+// == 2
+countMatching([1,3,3,4,5], 3) 
+它不灵活，因为它只能用来计算一个数组中精确匹配某个值的元素的个数。
+
+下面是一个灵活一些的版本，它能接受一个函数，而不是一个值，作为参数。我们可以用它来对任何数据、任何对象进行比较。
+
+// more flexible
+function count(array, matching) {
+    var counted = 0
+    for (var i = 0; i < array.length; i++) {
+        if (matching(array[i]))
+            counted++
+    }
+    return counted
+}
+
+// == 2, same as first example
+count([1,3,3,4,5], function(num) {
+    return (num == 3)
+})
+
+// == 2, now we can use our functions for ANY kind of items or match test!
+count([{name:"bob"}, {name:"henry"}, {name:"jon"}], function(obj) {
+    return (obj.name.length < 4)
+})
+因为高阶函数更具灵活性，你就更少有机会去写它们，因为你一旦你写成一个，你可以它应用到各种不同的情况中。
+
+可重复利用的比较函数
+
+你可能注意到了，count函数的写法比countMatching更冗长。但是，虽然count函数可复用了，但比较函数2却不可复用。如果是一些简单的情况，这就足够了，但经常，我们会需要更复杂的比较方法的函数。这样的函数不仅仅可用于计数，它们可以用于任何事情上，一但你写成或找到了这样的函数，从长期的角度看，它们会节省你大量的时间和调试功夫。
+
+让我们来定义一个可复用的比较函数，达到我们的目的。==不是一个函数。我们是否可以定义一个eq函数来帮我们完成类似的事情呢？
+
+function eq(a, b) {
+    return (a == b)
+}
+
+count([1,3,3,4,5], function(num) {
+    return eq(3, num)
+})
+我们向前迈进了一步：我们用了一个库函数来完成比较任务，而不是使用我们现写的代码。如果eq函数很复杂，我们可以测试它并可以在其它的地方复用它。
+
+但这使代码变得冗长，因为count函数的参数是一个只需要一个参数——数组元素——的函数，而eq函数却需要两个参数。我还是要定义我们自己的匿名函数。让我们来简化一下这些代码。
+
+ 
+function makeEq(a) {
+    // countMatchingWith wants a function that takes 
+    // only 1 argument, just like the one we're returning
+    return function(b) { 
+        return eq(a, b)
+    }
+}
+
+// now it's only on one line!
+count([1,3,3,4,5], makeEq(3))
+我们写了一个兼容count函数的函数(一个参数——数组元素——返回true或false)。看起来就像是count函数调用的是eq(3, item)。这叫做偏函数用法(partial function application)。
+
+偏函数用法(Partial Application)
+
+偏函数用法(Partial Function Application)是指创建一个调用另外一个部分参数已经预置的函数的函数的用法。这样，它就能被别的地方，比如count函数，以更少的参数形式来调用。我们在makeEq函数里已经实现了这些，但是，我们并不想针对我们各种功能开发出各种版本的makeX(比如makeEqt，makeGt，makeLt等)函数。让我们来找一种方法能通用于各种形式的函数。
+
+function applyFirst(f, a) {
+    return function(b) {
+        return f.call(null, a, b)
+    }
+}
+
+count([1,3,3,4,5], applyFirst(eq, 3))
+现在我们不再需要一个makeEq函数了。任何2个参数的库函数，我们都可以按这种方式调用。通过偏函数用法，使得定义即使是诸如==这样简单功能的各种函数都变得十分有意义，我们可以在高阶函数中更容易的使用它们。
+
+对那些超过2个参数的函数如何办呢？下面的这一版本3能让我们接受任意多的参数，高阶函数可以自己追加参数。
+
+function apply(f) {
+    var args = Array.prototype.slice.call(arguments, 1)
+    return function(x) {
+        return f.apply(null, args.concat(x))
+    }
+}
+
+function propertyEquals(propertyName, value, obj) {
+    return (obj[propertyName] == value)
+}
+
+count([{name:"bob"},{name:"john"}], apply(propertyEquals, "name", "bob")) // == 1
+我们预置了2个参数，“name” 和 “bob”，count函数补足了最后一个参数来完成整个调用。偏函数用法使我们能接受各样的函数为参数，例如eq，然后把它们用于各样的高阶函数，例如count，以此来解决我们特定的问题。
+
+配合ES5的 Map 和 Filter 功能函数的偏函数用法
+
+ES5里有很多非常好的高阶函数，underscore里的数量更多。让我们看看filter函数——一个接收比较函数、过滤数组内容的函数。
+
+// this equals [1,3,3]
+[1,3,3,4,5].filter(function(num) {
+    return (num < 4)
+})
+让我们把它替换成一个可以复用的比较函数lt (less than)。
+
+function lt(a, b) {
+    return (a < b)
+}
+
+[1,3,3,4,5].filter(apply(lt, 4))
+看上去添加这个lt函数的做法有点傻，但是，我们可以使用偏函数用法来创造一个很简练的比较函数，当这个比较函数变的很复杂的时候，我们就能从对它的复用过程中获得好处。
+
+map函数能让你把数组里的一个东西变成另外一个东西。
+
+var usersById = {"u1":{name:"bob"}, "u2":{name:"john"}}
+var user = {name:"sean", friendIds: ["u1", "u2"]}
+
+// == ["bob", "john"]
+function friendsNames(usersById, user) {
+    return user.friendIds.map(function(id) {
+        return usersById[id].name
+    })
+}
+我们写一个可以复用的map变换函数，就像之前我们的可复用比较函数一样。让我们写一个叫做lookup的函数。
+
+function lookup(obj, key) {
+    return obj[key]
+}
+
+// == [{name:"bob"}, {name:"john"}]
+function friends(usersById, user) {
+    return user.friendIds.map(apply(lookup, usersById))
+}
+很接近要求，但我们需要的是名称，而不是friend对象本身。如果我们再写一个参数颠倒过来的 lookup函数，通过第二次的map可以把它们的名称取出来。
+
+function lookupFlipped(key, obj) {
+    return lookup(obj, key)
+}
+
+// == ["bob", "john"]
+function friendsNames(usersById, user) {
+    return friends(usersById, user)
+            .map(apply(lookupFlipped, "name"))
+}
+但是我不想定义这个lookupFlipped函数，这样干有点傻。这样，我们来定义一个函数，它接收参数的顺序是从右到左，而不是从左到右，于是我们就能够复用lookup了。
+
+function applyr(f) {
+    var args = Array.prototype.slice.call(arguments, 1)
+    return function(x) {
+        return f.apply(null, [x].concat(args))
+    }
+}
+
+// == ["bob", "john"]
+function friendsNames(usersById, user) {
+    return friends(usersById, user)
+            .map(applyr(lookup, "name")) // we can use normal lookup!
+}
+applyr(lookup, "name")函数返回的函数只接受一个参数——那个对象——返回对象的名称。我们不再需要反转任何东西：我们可以按任何顺序接受参数。
+
+偏函数用法需要对一些常见的功能定义各种不同的函数，就像lt函数，但这正是我们的目的。你可以以偏函数用法把lt函数既用于count函数，也可用于Array.filter函数。它们可以复用，可以组合使用。
+
+函数组合
+
+在之前的例子中，我们遍历了数组两次，一次用来获取users，一次为了获取names。如果能在一次map映射操作中同时做这两件事情，效率会高很多。
+
+function friendsNames(usersById, user) {
+    return user.friendIds.map(function(id) {
+        var friend = lookup(usersById, id)
+        return lookup(friend, "name")
+    })
+}
+我们得到首次lookup的结果，把它第二次传入lookup。函数组合意思是串联多个函数，组成一个新的函数，每一次串联都是把前一个函数的输出当作下一个函数的输入。
+
+让我们来写一个能这样运转的高阶函数，利用它把friendsNames函数重写成一个只需要单次map操作的函数。需要注意的是，函数串联的执行顺序是从右到左的，就跟你写出f(g(x))这样的代码的运行方式一样。
+
+function compose(f, g) {
+    return function(x) {
+        return f(g(x))
+    }
+}
+
+function friendsNames(usersById, user) {
+    return user.friendIds.map(compose(applyr(lookup, "name"), apply(lookup, usersById)))
+}
+对数组的遍历只进行了一次，只使用一次map操作，跟我们头一个例子一样。
+
+我们不能使用我们写出的friends函数，因为它既包含了如何取出一个friend的业务逻辑，也包含了map操作。friends函数是不能复用的，它的职责太多了——它是针对特定事物的。如果你们再写一个friend函数，让它只map一个friend，写一个name函数，让它返回对象的名称呢？
+
+var friend = lookup // lookup 恰巧能干我们想要的事情。
+var name = applyr(lookup, "name")
+
+function friendsNames(usersById, user) {
+    // this line is now more semantic. 
+    return user.friends.map(compose(name, apply(friend, usersById)))
+}
+相较于定义一个既包含转换操作，又包含遍历操作的friends函数，我们只定义了一个可做转换操作的friend函数，而我们已经有了map函数为我做变换操作。friend函数比friends函数更具复用性，因为它包含更少的特定业务逻辑，能在更多的情形中使用。
+
+在这里你能找到更多的关于JavaScript里函数组合的信息。
+
+函数式和功能单一化让你的代码库更整洁
+
+我发现我的很多的JavaScript代码都是从无到有自己写出来的。这不仅仅是说比起使用现成的程序包要效率低，它还会暗藏更多的bug，更难阅读和维护。使用高阶函数和偏函数用法，我们可以写出可复用的程序库，每个函数都精准的对应解决它们能解决的一部分问题。
+
+随着时间的推移，项目会变得越来越复杂，各部分越来越耦合，如果我们拥有的是一个能够各自独立测试不依赖的程序库，我们的项目会从中受益，变得更健康，更稳定。
+
+一种宽泛的组合。并不特指函数或对象组合，只是一种你用小东西组建大东西的思想。↩
+
+“Matching functions”被称作predicates，但我这里不想引入新的编程术语。↩
+
+这里有更通用的apply实现。↩
+
+
+
+
+
+
+
+FAQ:
+如何启动和停止？
+启动 erl
+停止 Ctrl+C, q().
+
+如何编译运行？
+c(examples).
+examples:len([1,2,3]).
+
+记得在表达式的最后别忘记用英文句点(.)来终止，然后按回车来完成。
+如果你的输入结束时没有输入句点，那么Erlang终端就不会对你的输入值进行求值
+
+
+
+
+
+
+
+
+     
+
+     
+
+</body>
+</html>
