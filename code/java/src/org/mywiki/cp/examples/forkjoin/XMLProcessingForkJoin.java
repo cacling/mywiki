@@ -19,6 +19,12 @@ public class XMLProcessingForkJoin {
 	           this.xmlFiles = xmlFiles;
 	       }
 	 
+	       public ProcessXMLFiles(String sourceDirPath, String targetDirPath, File[] xmlFiles, int from, int to) {
+	       	   this(sourceDirPath, targetDirPath, xmlFiles);
+	           this.from = from;
+	           this.to = to;
+	       }
+	 
 	       @Override
 	       protected void compute() {
 	           try {
@@ -31,17 +37,17 @@ public class XMLProcessingForkJoin {
 	               }
 	 
 	               // Check the number of files
-	               if ( xmlFiles.length <= FILE_COUNT_THRESHOLD ) {
-	                   parseXMLFiles(xmlFiles);
+	               if (to -from <= FILE_COUNT_THRESHOLD ) {
+	                   parseXMLFiles(xmlFiles, from, to);
 	               }
 	               else {
 	                   // Split the array of XML files into two equal parts
-	                   int center = xmlFiles.length / 2;
-	                   File[] part1 = (File[])splitArray(xmlFiles, 0, center);
-	                   File[] part2 = (File[])splitArray(xmlFiles, center, xmlFiles.length);
+	                   int center = (from+ to) / 2;
+	                   //File[] part1 = (File[])splitArray(xmlFiles, 0, center);
+	                   //File[] part2 = (File[])splitArray(xmlFiles, center, xmlFiles.length);
 	 
-	                   invokeAll(new ProcessXMLFiles(sourceDirPath, targetDirPath, part1 ),
-	                             new ProcessXMLFiles(sourceDirPath, targetDirPath, part2 ));
+	                   invokeAll(new ProcessXMLFiles(sourceDirPath, targetDirPath, xmlFiles, from, center),
+	                             new ProcessXMLFiles(sourceDirPath, targetDirPath, xmlFiles, from + center, to));
 	 
 	               }
 	           }
@@ -50,18 +56,11 @@ public class XMLProcessingForkJoin {
 	           }
 	       }
 	 
-	       protected Object[] splitArray(Object[] array, int start, int end) {
-	           int length = end - start;
-	           Object[] part = new Object[length];
-	           for ( int i = start; i < end; i++ ) {
-	               part[i-start] = array[i];
-	           }
-	           return part;
-	       }
-	 
-	       protected void parseXMLFiles(File[] filesToParse) {
+	       protected void parseXMLFiles(File[] filesToParse, int from, int to) {
+	       	   for (int i = from; i < to; i++) {
 	           // Parse and copy the given set of XML files
 	           // ...
+	       	   }
 	       }
 	   }
 	 
